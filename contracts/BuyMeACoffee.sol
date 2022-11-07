@@ -8,12 +8,20 @@ import "hardhat/console.sol";
 // Desplegado en GOERLI en 0x398053A7CD3c638992fdb73b742600cC4F4e02d0
 
 contract BuyMeACoffee {
-   // Evento para emitir cuabdo se crea un Memo 
+
+// Evento para emitir cuabdo se crea un Memo 
 event NewMemo(
     address indexed from,
     uint256 timestamp,
     string name,
     string message
+);
+
+// Evento para emitir cuando se hace un update de la withdrawal address.
+event NewWithdrawalAddress(
+    address indexed from,
+    address indexed newaddress,
+    uint256 timestamp
 );
 
    // Memo struct.
@@ -30,9 +38,13 @@ Memo[] memos;
 // Adress de quien despliega el contrato 
 address payable owner;
 
+//Address que puede ejecutar el retiro de fondos
+address payable withdrawAddress;
+
 // Logica de Despliegue 
 constructor () {
     owner = payable(msg.sender);
+    withdrawAddress = owner;
 }
 
 /**
@@ -61,11 +73,28 @@ function buyCoffee(string memory _name, string memory _message) public payable {
 }
 
 /**
+ * @dev update de withdrawal address
+ */
+function updateWithdrawAddress(address payable _newaddress) public {
+    require(msg.sender == owner, "Solo el owner puede cambiar la address de retiro de fondos" );
+    withdrawAddress = _newaddress;
+
+    // Emite el log del evento de update de address
+    emit NewWithdrawalAddress(
+        msg.sender,
+        _newaddress, 
+        block.timestamp
+        ); 
+}
+
+/**
  * @dev enviado el balance total almacenado en este contrato al owner
  */
 
 function withdrawTips() public {
-    require(owner.send(address(this).balance));
+    //require(owner.send(address(this).balance));
+    require (withdrawAddress.send(address(this).balance));
+
 }
 
 /**
